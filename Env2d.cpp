@@ -163,6 +163,188 @@ public:
 
 };
 
+class No2{
+private:
+  int i;
+  int j;
+  No2*pai;
+
+public:
+  No2(int x, int y,No2*ptr=NULL){
+    i=x;
+    j=y;
+    pai=ptr;
+  };
+
+  int getI(){
+    return i;
+  }
+  int getJ(){
+    return j;
+  }
+
+ No2 *getPai(){
+   return pai;
+ }
+
+  ~No2(){};
+
+};
+
+
+class MelhorPrimeiro{
+private:
+  vector<No2*> openList;
+  vector<No2*> closedList;
+  int i_dest, j_dest;
+
+public:
+
+  MelhorPrimeiro(){
+    for(int x =0;x<MAX_ROWS;x++){
+      for(int y =0;y<MAX_ROWS;y++){
+        if(Env1.getTarget(x,y)==true){
+          i_dest=x;
+          j_dest=y;
+          break;
+        }
+      }
+    }
+  }
+
+  void primParte(){
+
+   No2 *nodeInicio= new No2(Rob1.getX(),Rob1.getY());
+
+   melhorPrim(nodeInicio);
+    
+
+  }
+
+  void percorrerLista2(){
+
+    int aux;
+    std::cout<<"Caminho do Melhor Primeiro: ";
+    for(aux=0; aux<closedList.size();aux++){
+      cout<<"X:";
+      std::cout<<closedList[aux]->getI();
+      std::cout<<"  ";
+      cout<<"Y:";
+      std::cout<<closedList[aux]->getJ()<<endl;
+    }
+  }
+
+
+  void melhorPrim(No2 *pai){
+
+    closedList.push_back(pai);
+
+    if(Env1.getTarget(pai->getI(),pai->getJ())){
+      cout<<"Busca Concluida!"<<endl;
+      percorrerLista2();
+      return;
+    }
+
+    No2 *aux;
+
+    for(int x = pai->getI()-1 ; x<=pai->getI()+1 ; x++){
+      for(int y = pai->getJ()-1 ; y<=pai->getJ()+1 ; y++){
+        if(!(x < 0 || y < 0 ||  x > 19 ||  y > 19 || x == pai->getI() && y==pai->getJ())){
+          if(Env1.getDisp(x,y)){
+            aux = new No2(x,y, pai);
+            if(!isClosedList(aux)){
+              openList.push_back(aux);
+            }
+          }
+        }
+      }
+    }
+
+    No2 * noEscolhido = NULL;
+
+    float auxH= 1000;
+
+    for(int x=0; x< openList.size(); x++){
+        float h = calculaH(openList[x]->getI(),openList[x]->getJ());
+
+        if(Env1.getTarget(openList[x]->getI(),openList[x]->getJ())){
+          noEscolhido = openList[x];
+          break;
+        }
+
+        if(h<auxH){
+          auxH=h;
+          noEscolhido = openList[x];
+        }
+    }
+
+    openList.clear();
+
+    melhorPrim(noEscolhido);
+    
+  }
+
+  float calculaH(int i_inicio,int j_inicio){
+    
+    float aux;
+     int di = abs(i_inicio-i_dest);
+     int dj = abs(j_inicio-j_dest);
+     
+     if(di>dj){
+      aux=1.5*dj+1*(di-dj);
+     }
+     else{
+       aux=1.5*di+1*(dj-di);
+     }
+     return aux;
+  }
+
+  bool getOpenlist(No2 *node)
+  {
+    for (int i = 0; i < openList.size(); i++)
+    {
+      if (node == openList[i])
+      {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  int getPositionOpenList(No2 *node)
+  {
+    for (int i = 0; i < openList.size(); i++)
+    {
+      if (node == openList[i])
+      {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  void removeOpenList(No2 *node)
+  {
+    openList.erase(openList.begin() + getPositionOpenList(node) - 1);
+  }
+
+  bool isClosedList(No2*node)
+  {
+    for (int i = 0; i < closedList.size(); i++)
+    {
+      if (node->getI() == closedList[i]->getI() && node->getJ() == closedList[i]->getJ())
+      {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+};
+
 class Astar{
 private:
   vector<No*> openList;
@@ -212,12 +394,13 @@ public:
 
   void percorrerLista(){
 
-    printf("Teste\n");
     int aux;
+    std::cout<<"Caminho A estrela: ";
     for(aux=0; aux<closedList.size();aux++){
-      std::cout<<"Caminho ";
+      cout<<"X:";
       std::cout<<closedList[aux]->getI();
       std::cout<<"  ";
+      cout<<"Y:";
       std::cout<<closedList[aux]->getJ()<<endl;
     }
   }
@@ -404,7 +587,8 @@ int main( void )
 
   // print the state of the environment
   //Env1.print_state();
-
+  MelhorPrimeiro maze1;
+  maze1.primParte();
   Astar maze;
   maze.firstPart();
 
