@@ -130,20 +130,17 @@ public:
 
 class No{
 private:
-int i,j,pai_i,pai_j,position,h,valor;
-float g,f;
+  int i;
+  int j;
+  int v;
+  No*pai;
 
 public:
-  No(int i = -1, int j = -1, int pai_i = -1, int pai_j = -1, int position = SOUTHEAST, float g = 9999, int h = 99999, float f=9999){
-    this->i=i;
-    this->j=j;
-    this->pai_i=pai_j;
-    this->pai_j=pai_j;
-    this->position=position;
-    this->g=g;
-    this->h=h;
-    this->f=f;
-    valor=Env1.getValorMatrix(i,j);
+  No(int x, int y, int valor=NONE, No*ptr=NULL){
+    i=x;
+    j=y;
+    v=valor;
+    pai=ptr;
   };
 
   int getI(){
@@ -152,12 +149,15 @@ public:
   int getJ(){
     return j;
   }
-  int getPos(){
-    return position;
-  }
-  float getF(){
-    return f;
-  }
+ int getV(){
+   return v;
+ }
+ void setV(int valor){
+   v=valor;
+ }
+ No *getPai(){
+   return pai;
+ }
 
   ~No(){};
 
@@ -167,12 +167,11 @@ class Astar{
 private:
   vector<No*> openList;
   vector<No*> closedList;
+  int i_dest, j_dest;
 
 public:
-  int calculaH(int i_inicio,int j_inicio){
 
-    int i_dest;
-    int j_dest;
+  Astar(){
     for(int x =0;x<MAX_ROWS;x++){
       for(int y =0;y<MAX_ROWS;y++){
         if(Env1.getTarget(x,y)==true){
@@ -182,185 +181,164 @@ public:
         }
       }
     }
+  }
+
+  float calculaH(int i_inicio,int j_inicio){
+    
+    float aux;
      int di = abs(i_inicio-i_dest);
      int dj = abs(j_inicio-j_dest);
-     float h;
+     
      if(di>dj){
-      h=1.5*dj+1*(di-dj);
+      aux=1.5*dj+1*(di-dj);
      }
      else{
-       h=1.5*di+1*(dj-di);
+       aux=1.5*di+1*(dj-di);
      }
-     return h;
+     return aux;
   };
 
 
 
 
-  void busca(){
+  void firstPart(){
 
-    for(int x =0;x<MAX_ROWS;x++){
-      for(int y =0;y<MAX_ROWS;y++){
-        if(Env1.getTarget(x,y)==true){
-          No *nodeFinal= new No(x,y);
-          break;
-        }
-      }
-    }
+   No *nodeInicio= new No(Rob1.getX(),Rob1.getY(),Rob1.getFacing());
 
-    int i_inicio=Rob1.getX();
-    int j_inicio=Rob1.getY();
-    int auxPosition=Rob1.getFacing();
-    int certo;
-
-    No *nodeInicio= new No(i_inicio,j_inicio,-1,-1,auxPosition);
-
-    openList.push_back(nodeInicio);
-
-    float auxF=9999;
-
-    calculaValores(nodeInicio);
-    bool flag = true;
-
-    while(flag){
-
-      for(int cont=0;cont<openList.size();cont++){
-        if(Env1.getTarget(openList[cont]->getI(),openList[cont]->getJ())){
-          closedList.push_back(openList[cont]);
-          int x = closedList.size();
-         for(int i = 0; i < x; i++){
-          printf("Caminho: %d %d", closedList[i]->getI(),closedList[i]->getJ() );
-         }
-          return ;
-        }
-      }
-      for(int cont=0;cont<openList.size();cont++){
-        if(openList[cont]->getF()<auxF){
-          certo=cont;
-          auxF=openList[cont]->getF();
-        }
-      }
-
-      closedList.push_back(openList[certo]);
-     
-      openList.clear();
-      calculaValores(openList[certo]);
-    }
+   fazTudo(nodeInicio);
+    
 
   }
 
   void percorrerLista(){
 
     printf("Teste\n");
-    for(int aux=0; aux<closedList.size();aux++){
+    int aux;
+    for(aux=0; aux<closedList.size();aux++){
       std::cout<<"Caminho ";
       std::cout<<closedList[aux]->getI();
       std::cout<<"  ";
-      std::cout<<closedList[aux]->getJ();
+      std::cout<<closedList[aux]->getJ()<<endl;
     }
   }
 
 
-  void calculaValores(No *pai){
+  void fazTudo(No *pai){
 
-    No *aux=NULL;
-    int auxH,auxPos;
-    float auxG,auxF;
-    int position;
-    int i = pai->getI();
-    int j = pai->getJ();
+    closedList.push_back(pai);
 
-    if(Env1.getTarget(i,j)){
-      closedList.push_back(pai);
-      removeOpenList(pai);
+    if(Env1.getTarget(pai->getI(),pai->getJ())){
+      cout<<"Busca Concluida!"<<endl;
+      percorrerLista();
       return;
     }
 
+    No *aux;
 
-    for(int k=-1;k<2;k++){
-      for(int l=-1;l<2;l++){
-        if(!((i + k) < 0 || (j + l) < 0 ||  (j + l) > 19 ||  (i + k) > 19)){
-          if(Env1.getDisp(i+k,j+l)){
-            if(i>k+i&&j>j+l){
-              auxH=calculaH(k+i,l+j);
-              auxG=1,5;
-              position=7;
-              auxG+=calculaRotacao(pai,position);
-              auxF=auxG+auxH;
-            }
-            else if(i>k+i&&j==j+l){
-              auxH=calculaH(k+i,l+j);
-              auxG=1;
-              position=6;
-              auxG+=calculaRotacao(pai,position);
-              auxF=auxG+auxH;
-            }
-            else if(i>k+i&&j<j+l){
-              auxH=calculaH(k+i,l+j);
-              auxG=1,5;
-              position=5;
-              auxG+=calculaRotacao(pai,position);
-              auxF=auxG+auxH;
-            }
-            else if(i=k+i&&j>j+l){
-              auxH=calculaH(k+i,l+j);
-              auxG=1;
-              position=0;
-              auxG+=calculaRotacao(pai,position);
-              auxF=auxG+auxH;
-            }
-            else if(i=k+i&&j<j+l){
-              auxH=calculaH(k+i,l+j);
-              auxG=1;
-              position=4;
-              auxG+=calculaRotacao(pai,position);
-              auxF=auxG+auxH;
-            }
-            else if(i<k+i&&j>j+l){
-              auxH=calculaH(k+i,l+j);
-              auxG=1,5;
-              position=1;
-              auxG+=calculaRotacao(pai,position);
-              auxF=auxG+auxH;
-            }
-            else if(i<k+i&&j==j+l){
-              auxH=calculaH(k+i,l+j);
-              auxG=1;
-              position=2;
-              auxG+=calculaRotacao(pai,position);
-              auxF=auxG+auxH;
-            }
-            else if(i<k+i&&j<j+l){
-              auxH=calculaH(k+i,l+j);
-              auxG=1,5;
-              position=3;
-              auxG+=calculaRotacao(pai,position);
-              auxF=auxG+auxH;
-            }
-            aux= new No(k+i,l+j,i,j,position,auxG,auxH,auxF);
-
-            if(!isCloseList(aux)){
+    for(int x = pai->getI()-1 ; x<=pai->getI()+1 ; x++){
+      for(int y = pai->getJ()-1 ; y<=pai->getJ()+1 ; y++){
+        if(!(x < 0 || y < 0 ||  x > 19 ||  y > 19 || x == pai->getI() && y==pai->getJ())){
+          if(Env1.getDisp(x,y)){
+            aux = new No(x,y,Env1.getValorMatrix(x,y), pai);
+            if(!isClosedList(aux)){
               openList.push_back(aux);
-              printf("Aux %d %d\n", aux->getI(), aux->getJ());
             }
           }
         }
       }
     }
+
+    No * noEscolhido = NULL;
+
+    int pos;
+    float f= 1000;
+
+    for(int x=0; x< openList.size(); x++){
+        float h = calculaH(openList[x]->getI(),openList[x]->getJ());
+        float g = calculaG(pai, openList[x],&pos);
+
+        if(Env1.getTarget(openList[x]->getI(),openList[x]->getJ())){
+          noEscolhido = openList[x];
+          noEscolhido->setV(TARGET);
+          break;
+        }
+
+        float fim = g+h;
+
+        if(fim<f){
+          f=fim;
+          noEscolhido = openList[x];
+          noEscolhido->setV(pos);
+        }
+    }
+
+    openList.clear();
+
+    fazTudo(noEscolhido);
+    
   }
 
-  int calculaRotacao(No* node, int pos){
+  float calculaG(No*pai,No*p,int *position){
+    
+    float auxG;
+
+    if(pai->getI()>p->getI()&&pai->getJ()>p->getJ()){
+              auxG=1.5;
+              *position=7;
+              auxG+=calculaRotacao(pai,position);
+            }
+            else if(pai->getI()>p->getI()&&pai->getJ()==p->getJ()){
+              auxG=1;
+              *position=6;
+              auxG+=calculaRotacao(pai,position);
+            }
+            else if(pai->getI()>p->getI()&&pai->getJ()<p->getJ()){
+              auxG=1.5;
+              *position=5;
+              auxG+=calculaRotacao(pai,position);
+            }
+            else if(pai->getI()==p->getI()&&pai->getJ()>p->getJ()){
+              auxG=1;
+              *position=0;
+              auxG+=calculaRotacao(pai,position);
+            }
+            else if(pai->getI()==p->getI()&&pai->getJ()<p->getJ()){
+              auxG=1;
+              *position=4;
+              auxG+=calculaRotacao(pai,position);
+            }
+            else if(pai->getI()<p->getI()&&pai->getJ()>p->getJ()){
+              auxG=1.5;
+              *position=1;
+              auxG+=calculaRotacao(pai,position);
+            }
+            else if(pai->getI()<p->getI()&&pai->getJ()==p->getJ()){
+              auxG=1;
+              *position=2;
+              auxG+=calculaRotacao(pai,position);
+             
+            }
+            else if(pai->getI()<p->getI()&&pai->getJ()<p->getJ()){
+              auxG=1.5;
+              *position=3;
+              auxG+=calculaRotacao(pai,position);
+            }
+
+            return auxG;
+  }
+
+  int calculaRotacao(No* node, int *pos){
 
     int menor=9999;
-    int x=node->getPos();
+    int x=node->getV();
     int cl,co;
-    if(pos<x){
-      co=abs(pos-x);
-      cl=abs(pos-x-8);
+    if(*pos<=x){
+      co=abs(*pos-x);
+      cl=abs(*pos-x-8);
     }
     else{
-      co=abs(pos-x+8);
-      cl=abs(pos-x);
+      co=abs(*pos-x+8);
+      cl=abs(*pos-x);
     }
 
     if(co<=cl)
@@ -400,7 +378,7 @@ public:
     openList.erase(openList.begin() + getPositionOpenList(node) - 1);
   }
 
-  bool isCloseList(No *node)
+  bool isClosedList(No *node)
   {
     for (int i = 0; i < closedList.size(); i++)
     {
@@ -425,10 +403,10 @@ int main( void )
   Env1.scan_state_from_file();
 
   // print the state of the environment
-  Env1.print_state();
+  //Env1.print_state();
 
   Astar maze;
-  maze.busca();
+  maze.firstPart();
 
   return 0;
 }
